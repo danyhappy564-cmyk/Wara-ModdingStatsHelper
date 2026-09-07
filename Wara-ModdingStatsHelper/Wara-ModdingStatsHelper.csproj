@@ -118,12 +118,30 @@
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(SptBepInEx)\plugins" />
   </Target>
 
+  <!--
+    The zip must NOT live inside the directory being zipped. ZipDirectory archives the
+    CONTENTS of SourceDirectory, so the staged tree has to be the folder holding
+    BepInEx\ for the archive to unpack correctly over an SPT install - and pointing
+    DestinationFile at that same folder makes the task read the file it is currently
+    writing:
+
+        MSB3931: ... 'Wara-ModdingStatsHelper.zip' file is in use by another process
+
+    The "other process" is this one. Staging one level down fixes it, and also lets
+    RemoveDir clear the staging tree without trying to delete a locked archive.
+  -->
+  <PropertyGroup>
+    <ReleaseDir>$(ProjectDir)..\Release</ReleaseDir>
+    <ReleaseStagingDir>$(ReleaseDir)\staging</ReleaseStagingDir>
+  </PropertyGroup>
+
   <Target Name="PackageRelease" AfterTargets="CopyToSPT">
-    <RemoveDir Directories="$(ProjectDir)..\Release" />
-    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ProjectDir)..\Release\BepInEx\plugins" />
-    <ZipDirectory SourceDirectory="$(ProjectDir)..\Release"
-                  DestinationFile="$(ProjectDir)..\Release\Wara-ModdingStatsHelper.zip"
+    <RemoveDir Directories="$(ReleaseStagingDir)" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ReleaseStagingDir)\BepInEx\plugins" />
+    <ZipDirectory SourceDirectory="$(ReleaseStagingDir)"
+                  DestinationFile="$(ReleaseDir)\Wara-ModdingStatsHelper.zip"
                   Overwrite="true" />
+    <Message Text="Release zip: $(ReleaseDir)\Wara-ModdingStatsHelper.zip" Importance="high" />
   </Target>
 
 </Project>
