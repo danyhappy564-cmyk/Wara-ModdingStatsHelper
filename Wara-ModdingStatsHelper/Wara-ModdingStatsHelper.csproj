@@ -1,102 +1,129 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{6011339B-FE25-46B7-9C4B-1092D8BFB1D7}</ProjectGuid>
+    <!--
+      netstandard2.1, matching what SPT 4.1 client plugins target. This was net471,
+      which is the 4.0-era shape.
+    -->
+    <TargetFramework>netstandard2.1</TargetFramework>
     <OutputType>Library</OutputType>
-    <RootNamespace>ChooChoo-Wara-ModStats</RootNamespace>
+    <RootNamespace>ShowMeTheStats</RootNamespace>
     <AssemblyName>Wara-ModdingStatsHelper</AssemblyName>
-    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
+    <LangVersion>latest</LangVersion>
+    <!--
+      Carried over from the Properties/AssemblyInfo.cs this project used to hand-write.
+      SDK projects generate those attributes, so the file is gone and the values live
+      here instead - 1.1.1 is what it declared, and dropping to 1.0 would have been a
+      silent downgrade.
+    -->
+    <Version>1.1.1</Version>
+    <AssemblyVersion>1.1.1</AssemblyVersion>
+    <FileVersion>1.1.1</FileVersion>
+    <Company>wara</Company>
+    <Product>Wara-ModdingStatsHelper</Product>
+    <AssemblyTitle>Wara-ModdingStatsHelper</AssemblyTitle>
+
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <Deterministic>true</Deterministic>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+
+  <!--
+    Every reference used to be a "..\..\..\" path, which only resolves when the
+    repository sits exactly three levels inside the SPT install. A clone anywhere else
+    silently failed to resolve every single one. SptRoot replaces that and can be
+    overridden per machine with -p:SptRoot=... or an SptRoot environment variable.
+  -->
+  <PropertyGroup>
+    <SptRoot Condition=" '$(SptRoot)' == '' ">E:\SPT 4.1</SptRoot>
+    <SptManaged>$(SptRoot)\EscapeFromTarkov_Data\Managed</SptManaged>
+    <SptBepInEx>$(SptRoot)\BepInEx</SptBepInEx>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
+
   <ItemGroup>
     <Reference Include="0Harmony">
-      <HintPath>..\..\..\BepInEx\core\0Harmony.dll</HintPath>
-    </Reference>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>..\..\..\EscapeFromTarkov_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <HintPath>$(SptBepInEx)\core\0Harmony.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="BepInEx">
-      <HintPath>..\..\..\BepInEx\core\BepInEx.dll</HintPath>
+      <HintPath>$(SptBepInEx)\core\BepInEx.dll</HintPath>
+      <Private>false</Private>
     </Reference>
-    <Reference Include="Comfort, Version=1.0.0.4, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\EscapeFromTarkov_Data\Managed\Comfort.dll</HintPath>
-    </Reference>
-    <Reference Include="Sirenix.Serialization">
-      <HintPath>..\..\..\EscapeFromTarkov_Data\Managed\Sirenix.Serialization.dll</HintPath>
-    </Reference>
+    <!--
+      spt-core is deliberately gone. Nothing here uses an SPT.Core type, and no SPT 4.1
+      install ships that assembly - keeping it would have failed the build on a
+      reference the code never needed.
+    -->
     <Reference Include="spt-common">
-      <HintPath>..\..\..\BepInEx\plugins\spt\spt-common.dll</HintPath>
-    </Reference>
-    <Reference Include="spt-core">
-      <HintPath>..\..\..\BepInEx\plugins\spt\spt-core.dll</HintPath>
+      <HintPath>$(SptBepInEx)\plugins\spt\spt-common.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="spt-reflection">
-      <HintPath>..\..\..\BepInEx\plugins\spt\spt-reflection.dll</HintPath>
+      <HintPath>$(SptBepInEx)\plugins\spt\spt-reflection.dll</HintPath>
+      <Private>false</Private>
     </Reference>
-    <Reference Include="System.Core" />
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(SptManaged)\Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Comfort">
+      <HintPath>$(SptManaged)\Comfort.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Sirenix.Serialization">
+      <HintPath>$(SptManaged)\Sirenix.Serialization.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="UnityEngine">
-      <HintPath>..\..\..\EscapeFromTarkov_Data\Managed\UnityEngine.dll</HintPath>
+      <HintPath>$(SptManaged)\UnityEngine.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>..\..\..\EscapeFromTarkov_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>$(SptManaged)\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.InputLegacyModule">
-      <HintPath>..\..\..\EscapeFromTarkov_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
+      <HintPath>$(SptManaged)\UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>false</Private>
     </Reference>
-    <Reference Include="UnityEngine.InputModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\EscapeFromTarkov_Data\Managed\UnityEngine.InputModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.UI, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\EscapeFromTarkov_Data\Managed\UnityEngine.UI.dll</HintPath>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(SptManaged)\UnityEngine.UI.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.UIModule">
-      <HintPath>..\..\..\EscapeFromTarkov_Data\Managed\UnityEngine.UIModule.dll</HintPath>
+      <HintPath>$(SptManaged)\UnityEngine.UIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>$(SptManaged)\UnityEngine.TextRenderingModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.TextMeshPro">
+      <HintPath>$(SptManaged)\Unity.TextMeshPro.dll</HintPath>
+      <Private>false</Private>
     </Reference>
   </ItemGroup>
-  <ItemGroup>
-    <AppDesigner Include="Properties\" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Client\Globals.cs" />
-    <Compile Include="Client\Plugin.cs" />
-    <Compile Include="Client\ShowMeTheStatsPatches.cs" />
-    <Compile Include="Client\Utils.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup />
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup>
-    <PostBuildEvent>xcopy /y "$(TargetPath)" "$(ProjectDir)..\..\..\BepInEx\plugins"
 
-mkdir "$(ProjectDir)..\Release\BepInEx\plugins"
-xcopy /y "$(TargetPath)" "$(ProjectDir)..\Release\BepInEx\plugins"
+  <!--
+    Fail with the reason rather than with a wall of "type or namespace not found".
+  -->
+  <Target Name="EnsureSptRoot" BeforeTargets="BeforeBuild;ResolveAssemblyReferences">
+    <Error Condition="!Exists('$(SptManaged)\Assembly-CSharp.dll')"
+           Text="SptRoot '$(SptRoot)' does not look like an SPT install (missing EscapeFromTarkov_Data\Managed\Assembly-CSharp.dll). Pass -p:SptRoot=... or set the SptRoot environment variable." />
+  </Target>
 
-powershell -Command "Compress-Archive -Path '$(ProjectDir)..\Release\BepInEx' -DestinationPath '$(ProjectDir)..\Release\$(SolutionName).zip' -Force"</PostBuildEvent>
-  </PropertyGroup>
+  <!-- Drop the plugin into the install and build the release zip, as before. -->
+  <Target Name="CopyToSPT" AfterTargets="Build" Condition="Exists('$(SptRoot)')">
+    <MakeDir Directories="$(SptBepInEx)\plugins" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(SptBepInEx)\plugins" />
+  </Target>
+
+  <Target Name="PackageRelease" AfterTargets="CopyToSPT">
+    <RemoveDir Directories="$(ProjectDir)..\Release" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ProjectDir)..\Release\BepInEx\plugins" />
+    <ZipDirectory SourceDirectory="$(ProjectDir)..\Release"
+                  DestinationFile="$(ProjectDir)..\Release\Wara-ModdingStatsHelper.zip"
+                  Overwrite="true" />
+  </Target>
+
 </Project>
