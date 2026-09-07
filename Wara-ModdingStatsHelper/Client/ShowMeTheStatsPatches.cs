@@ -80,7 +80,7 @@ namespace ShowMeTheStats
                     // IF WE ARE NOT COMPARING
                     if (hoveringSlottedMod || Globals.isKeyPressed || Globals.dropDownCurrentItem == null)
                     {
-                        List<ItemAttributeClass> attributes = GetAllAttributesNotInBlacklist(Globals.mod.Attributes);
+                        List<ItemAttribute> attributes = GetAllAttributesNotInBlacklist(Globals.mod.Attributes);
 
                         foreach (var attribute in attributes)
                         {
@@ -108,8 +108,8 @@ namespace ShowMeTheStats
                     // IF WE ARE COMPARING
                     else
                     {
-                        List<ItemAttributeClass> replacingAttributes = GetAllAttributesNotInBlacklist(Globals.mod.Attributes);
-                        List<ItemAttributeClass> slottedAttributes = GetAllAttributesNotInBlacklist(Globals.dropDownCurrentItem.Attributes);
+                        List<ItemAttribute> replacingAttributes = GetAllAttributesNotInBlacklist(Globals.mod.Attributes);
+                        List<ItemAttribute> slottedAttributes = GetAllAttributesNotInBlacklist(Globals.dropDownCurrentItem.Attributes);
 
                         List<string> replacingAttributesDisplayed = new List<string>();
 
@@ -123,7 +123,7 @@ namespace ShowMeTheStats
                                 //}
 
                                 string stringDisplayname = AlignTextToWidth(slottedAttribute.DisplayName.Trim() + ":");
-                                ItemAttributeClass replacingAttribute = replacingAttributes.SingleOrDefault(a => a.Id.ToString() == slottedAttribute.Id.ToString());
+                                ItemAttribute replacingAttribute = replacingAttributes.SingleOrDefault(a => a.Id.ToString() == slottedAttribute.Id.ToString());
 
                                 if (replacingAttribute != null && replacingAttribute.Base() != 0)
                                 {
@@ -233,16 +233,73 @@ namespace ShowMeTheStats
         [PatchPrefix]
         static void Prefix(ModdingScreenSlotView slotView)
         {
-            FieldInfo fieldInfo = typeof(ModdingScreenSlotView).GetField("slot_0", BindingFlags.Instance | BindingFlags.NonPublic);
+            FieldInfo fieldInfo = SlotField.Get();
             if (fieldInfo != null)
             {
-                Slot slot_0 = (Slot)fieldInfo.GetValue(slotView);
-                if (slot_0.ContainedItem != null)
+                Slot slot_0 = fieldInfo.GetValue(slotView) as Slot;
+                if (slot_0 != null && slot_0.ContainedItem != null)
                 {
                     Globals.dropDownCurrentItem = slot_0.ContainedItem;
                     //Globals.slotType = slot_0;
                 }
             }
+        }
+    }
+
+
+    /// <summary>
+    /// Finds the private Slot the drop-down menu was opened on.
+    ///
+    /// The name is <c>slot_0</c>, which de4dot derives from the field's own type rather
+    /// than from anything BSG wrote, so 4.1's deobfuscation pass leaves it alone -
+    /// assembly-tool only renames fields whose names start with one of its obfuscator
+    /// prefixes (Class, GClass, GStruct, method, ...) and "slot" is not one of them.
+    ///
+    /// It is still looked up defensively. The name surviving 4.1 is a property of the
+    /// TOOL, not a promise from BSG, and the previous code simply null-checked the
+    /// lookup and carried on - so the day the field is renamed, comparison mode stops
+    /// working with nothing in the log to say why. Falling back to "the one Slot-typed
+    /// instance field on this type" costs nothing and keeps that from being silent.
+    /// </summary>
+    internal static class SlotField
+    {
+        private static bool _resolved;
+        private static FieldInfo _field;
+
+        internal static FieldInfo Get()
+        {
+            if (_resolved)
+            {
+                return _field;
+            }
+
+            _resolved = true;
+
+            _field = AccessTools.Field(typeof(ModdingScreenSlotView), "slot_0");
+
+            if (_field != null)
+            {
+                return _field;
+            }
+
+            FieldInfo[] candidates = AccessTools.GetDeclaredFields(typeof(ModdingScreenSlotView))
+                .Where(f => !f.IsStatic && f.FieldType == typeof(Slot))
+                .ToArray();
+
+            if (candidates.Length == 1)
+            {
+                _field = candidates[0];
+                ShowMeTheStatsPlugin.Log.LogWarning(
+                    $"ModdingScreenSlotView.slot_0 is gone; using the only Slot field instead: {_field.Name}");
+
+                return _field;
+            }
+
+            ShowMeTheStatsPlugin.Log.LogError(
+                $"No usable Slot field on ModdingScreenSlotView ({candidates.Length} candidates). "
+                + "Stat comparison against the currently fitted mod will not work.");
+
+            return null;
         }
     }
 

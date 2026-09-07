@@ -1,4 +1,5 @@
 ﻿using BepInEx;
+using BepInEx.Logging;
 using UnityEngine;
 
 namespace ShowMeTheStats
@@ -6,8 +7,16 @@ namespace ShowMeTheStats
     [BepInPlugin("com.moddingstatshelper.spt", "Modding Stats Helper", "1.0")]
     public class ShowMeTheStatsPlugin : BaseUnityPlugin
     {
+        /// <summary>
+        /// Static handle on BepInEx's logger, so the patches - which are static - can
+        /// report a binding that did not resolve instead of failing quietly.
+        /// </summary>
+        internal static ManualLogSource Log { get; private set; }
+
         void Awake()
         {
+            Log = Logger;
+
             new ItemShowTooltipPatch().Enable();
             new ShowTooltipPatch().Enable();
             new WeaponUpdatePatch().Enable();
